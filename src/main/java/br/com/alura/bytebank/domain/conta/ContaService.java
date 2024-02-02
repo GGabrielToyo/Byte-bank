@@ -19,8 +19,6 @@ public class ContaService {
         this.connection = new ConnectionFactory();
     }
 
-    private Set<Conta> contas = new HashSet<>();
-
     public Set<Conta> listarContasAbertas() {
         Connection conn = connection.recuperarConexao();
         return new ContaDAO(conn).listar();
@@ -51,6 +49,10 @@ public class ContaService {
             throw new RegraDeNegocioException("Saldo insuficiente!");
         }
 
+        if(!conta.getEstaAtiva()){
+            throw new RegraDeNegocioException("Está conta não está ativa!");
+        }
+
         BigDecimal novoValor = conta.getSaldo().subtract(valor);
         alterar(conta, novoValor);
     }
@@ -60,6 +62,11 @@ public class ContaService {
         if (valor.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RegraDeNegocioException("Valor do deposito deve ser superior a zero!");
         }
+
+        if(!conta.getEstaAtiva()){
+            throw new RegraDeNegocioException("Está conta não está ativa!");
+        }
+
         BigDecimal novoValor = conta.getSaldo().add(valor);
         alterar(conta, novoValor);
     }
@@ -75,7 +82,9 @@ public class ContaService {
             throw new RegraDeNegocioException("Conta não pode ser encerrada pois ainda possui saldo!");
         }
 
-        contas.remove(conta);
+        Connection conn = connection.recuperarConexao();
+        new ContaDAO(conn).encerrarLogico(numeroDaConta);
+
     }
 
     public Conta buscarContaPorNumero(Integer numero) {
